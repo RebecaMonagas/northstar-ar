@@ -1,7 +1,6 @@
-
 const formulario = document.getElementById("formulario");
+const botonCarrito = document.getElementById("boton-carrito");
 const productos = [
-
 	{
 		id: 1,
 		nombre: "Remera Blanca",
@@ -278,25 +277,22 @@ const productos = [
 	},
 ];
 
-let carrito = [];
-
+// Que hace el JSON.parse: convierte el string en un objeto de JavaScript
+let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 
 if (formulario) {
 	formulario.addEventListener("submit", (event) => {
-		event.preventDefault(); 
-		
+		event.preventDefault();
 
 		const inputs = formulario.getElementsByClassName("control");
-		
 
-		let camposCompletos = true; 
+		let camposCompletos = true;
 		for (let index = 0; index < inputs.length; index++) {
 			if (inputs[index].value === "") {
 				camposCompletos = false;
 			}
 		}
 
-		
 		if (camposCompletos) {
 			console.log("Todos los campos están completos");
 		}
@@ -322,7 +318,6 @@ for (let index = 0; index < array.length; index++) {
 	console.log(array[index]);
 }
 
-
 function mostrarProductos(productos) {
 	productos.forEach((producto) => {
 		const card = `
@@ -342,14 +337,18 @@ function mostrarProductos(productos) {
       </section>
 		`;
 
-		
-		document.getElementById(
-			`${producto.tipo}-${producto.categoria}`
-		).innerHTML += card;
+		if (document.getElementById(`${producto.tipo}-${producto.categoria}`)) {
+			document.getElementById(
+				`${producto.tipo}-${producto.categoria}`
+			).innerHTML += card;
+		}
 	});
 }
 
-mostrarProductos(productos);
+function guardarCarritoLocalStorage() {
+	// Que hace el JSON.stringify: convierte un objeto de JavaScript en un string
+	localStorage.setItem("carrito", JSON.stringify(carrito));
+}
 
 function agregarAlCarrito(id) {
 	// console.log("Producto agregado al carrito con id:", id);
@@ -363,7 +362,7 @@ function agregarAlCarrito(id) {
 				carrito.push({...producto, cantidad: 1});
 			}
 
-			// carrito.push(producto);
+			guardarCarritoLocalStorage();
 		}
 	});
 
@@ -373,6 +372,12 @@ function agregarAlCarrito(id) {
 function mostrarCarrito() {
 	const carritoHTML = document.getElementById("carrito-modal");
 
+	// Si el carrito esta vacio coloco un mensaje
+	if (carrito.length === 0) {
+		carritoHTML.innerHTML = "<p class='carrito-vacio'>Carrito vacio 🙁</p>";
+		return;
+	}
+
 	const item = carrito.map((producto) => {
 		return `
 			<div class="item-carrito">
@@ -380,6 +385,7 @@ function mostrarCarrito() {
 				<p>${producto.nombre}</p>
 				<p>$ ${producto.precio.toLocaleString()}</p>
 				<p>Cantidad: ${producto.cantidad}</p>
+				<button onclick="eliminarProducto(${producto.id})">Eliminar</button>
 			</div>
 		`;
 	});
@@ -387,8 +393,25 @@ function mostrarCarrito() {
 	carritoHTML.innerHTML = item.join("");
 }
 
-const botonCarrito = document.getElementById("boton-carrito");
+function eliminarProducto(id) {
+	carrito = carrito.filter((producto) => {
+		if (producto.id !== id) {
+			return producto;
+		} else {
+			if (producto.cantidad > 1) {
+				producto.cantidad--;
+				return producto;
+			}
+		}
+	});
+
+	mostrarCarrito();
+	guardarCarritoLocalStorage();
+}
+
 
 botonCarrito.addEventListener("click", () => {
 	mostrarCarrito();
 });
+
+mostrarProductos(productos);
